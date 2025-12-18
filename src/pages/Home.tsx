@@ -59,7 +59,7 @@ export function Home() {
               <div className="text-slate-300">Books Available</div>
             </div>
             <div className="glass-dark rounded-2xl p-6">
-              <div className="text-4xl font-bold text-white mb-2">50,000+</div>
+              <div className="text-4xl font-bold text-white mb-2">67,000+</div>
               <div className="text-slate-300">Happy Readers</div>
             </div>
             <div className="glass-dark rounded-2xl p-6">
