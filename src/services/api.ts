@@ -130,32 +130,15 @@ export async function getRecommendations(query: string): Promise<Recommendation[
   return data.recommendations;
 }
 
-/**
- * Get user's reading lists
- *
- * TODO: Replace with real API call in Week 2, Day 5-7
- *
- * Implementation steps:
- * 1. Deploy Lambda function: library-get-reading-lists
- * 2. Lambda should query DynamoDB by userId (from Cognito token)
- * 3. Create API Gateway endpoint: GET /reading-lists
- * 4. Add Cognito authorizer (Week 3)
- * 5. Replace mock code below with:
- *
- * const headers = await getAuthHeaders();
- * const response = await fetch(`${API_BASE_URL}/reading-lists`, {
- *   headers
- * });
- * if (!response.ok) throw new Error('Failed to fetch reading lists');
- * return response.json();
- *
- * Expected response: Array of ReadingList objects for the authenticated user
- */
 export async function getReadingLists(): Promise<ReadingList[]> {
-  // TODO: Remove this mock implementation after deploying Lambda
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(mockReadingLists), 500);
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/reading-lists`, {
+    headers,
   });
+  if (!response.ok) {
+    throw new Error('Failed to fetch reading lists');
+  }
+  return response.json();
 }
 
 export async function createReadingList(
@@ -202,46 +185,5 @@ export async function deleteReadingList(): Promise<void> {
   // Mock implementation
   return new Promise((resolve) => {
     setTimeout(() => resolve(), 300);
-  });
-}
-
-/**
- * Get reviews for a book
- * TODO: Replace with GET /books/:id/reviews API call
- */
-export async function getReviews(bookId: string): Promise<Review[]> {
-  // Mock implementation
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const mockReviews: Review[] = [
-        {
-          id: '1',
-          bookId,
-          userId: '1',
-          rating: 5,
-          comment: 'Absolutely loved this book! A must-read.',
-          createdAt: '2024-11-01T10:00:00Z',
-        },
-      ];
-      resolve(mockReviews);
-    }, 500);
-  });
-}
-
-/**
- * Create a new review
- * TODO: Replace with POST /books/:bookId/reviews API call
- */
-export async function createReview(review: Omit<Review, 'id' | 'createdAt'>): Promise<Review> {
-  // Mock implementation
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newReview: Review = {
-        ...review,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      };
-      resolve(newReview);
-    }, 500);
   });
 }
