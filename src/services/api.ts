@@ -26,66 +26,24 @@ export async function getBooks(): Promise<Book[]> {
   return response.json();
 }
 
-/**
- * Get a single book by ID
- *
- * TODO: Replace with real API call in Week 2, Day 3-4
- *
- * Implementation steps:
- * 1. Deploy Lambda function: library-get-book (see IMPLEMENTATION_GUIDE.md)
- * 2. Create API Gateway endpoint: GET /books/{id}
- * 3. Replace mock code below with:
- *
- * const response = await fetch(`${API_BASE_URL}/books/${id}`);
- * if (response.status === 404) return null;
- * if (!response.ok) throw new Error('Failed to fetch book');
- * return response.json();
- *
- * Expected response: Single Book object or null if not found
- */
 export async function getBook(id: string): Promise<Book | null> {
-  // TODO: Remove this mock implementation after deploying Lambda
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const book = mockBooks.find((b) => b.id === id);
-      resolve(book || null);
-    }, 300);
-  });
+  const response = await fetch(`${API_BASE_URL}/books/${id}`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error('Failed to fetch book');
+  return response.json();
 }
 
-/**
- * Create a new book (admin only)
- *
- * TODO: Replace with real API call in Week 2, Day 5-7
- *
- * Implementation steps:
- * 1. Deploy Lambda function: library-create-book
- * 2. Create API Gateway endpoint: POST /books
- * 3. Add Cognito authorizer (Week 3)
- * 4. Replace mock code below with:
- *
- * const headers = await getAuthHeaders();
- * const response = await fetch(`${API_BASE_URL}/books`, {
- *   method: 'POST',
- *   headers,
- *   body: JSON.stringify(book)
- * });
- * if (!response.ok) throw new Error('Failed to create book');
- * return response.json();
- *
- * Note: This endpoint requires admin role in Cognito
- */
 export async function createBook(book: Omit<Book, 'id'>): Promise<Book> {
-  // TODO: Remove this mock implementation after deploying Lambda
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newBook: Book = {
-        ...book,
-        id: Date.now().toString(),
-      };
-      resolve(newBook);
-    }, 500);
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/books`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(book) 
   });
+  if (!response.ok) {
+    throw new Error('Failed to create book');
+  }
+  return response.json();
 }
 
 /**
