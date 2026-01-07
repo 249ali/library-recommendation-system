@@ -1,5 +1,5 @@
- import { Book, ReadingList, Review, Recommendation } from '@/types';
-import { mockBooks, mockReadingLists } from './mockData';
+ import { Book, ReadingList, Recommendation } from '@/types';
+ 
 
 import { fetchAuthSession } from 'aws-amplify/auth';
 
