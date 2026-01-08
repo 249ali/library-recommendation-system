@@ -41,15 +41,7 @@ interface AuthProviderProps {
  * IMPLEMENTATION CHECKLIST:
  * ============================================================================
  *
- * [ ] Week 3, Day 1-2: Create Cognito User Pool in AWS Console
- * [ ] Week 3, Day 1-2: Note User Pool ID and App Client ID
- * [ ] Week 3, Day 1-2: Update .env file with Cognito credentials
- * [ ] Week 3, Day 3-4: Install AWS Amplify: npm install aws-amplify
- * [ ] Week 3, Day 3-4: Configure Amplify in src/main.tsx (see below)
- * [ ] Week 3, Day 3-4: Import Cognito functions at top of this file
- * [ ] Week 3, Day 3-4: Replace login() function with Cognito signIn
  * [ ] Week 3, Day 3-4: Replace logout() function with Cognito signOut
- * [ ] Week 3, Day 3-4: Replace signup() function with Cognito signUp
  * [ ] Week 3, Day 3-4: Update useEffect to check Cognito session
  * [ ] Week 3, Day 3-4: Remove localStorage mock code
  * [ ] Week 3, Day 3-4: Test registration and login flow
@@ -79,10 +71,9 @@ useEffect(() => {
   checkAuth();
 }, []);
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const { isSignedIn } = await signIn({ username: email, password });
+const login = async (email: string, password: string) => {
+  try {
+    const { isSignedIn } = await signIn({ username: email, password });
     if (isSignedIn) {
       const user = await getCurrentUser();
       setUser({
@@ -93,31 +84,24 @@ useEffect(() => {
         createdAt: new Date().toISOString(),
       });
     }
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
+};
 
-  const logout = async () => {
-    setIsLoading(true);
-    try {
-          await signOut();
+const logout = async () => {
+  try {
+    await signOut();
     setUser(null);
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
+};
 
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signup = async (email: string, password: string, name: string) => {
-    setIsLoading(true);
-    try {
-          await signUp({
+const signup = async (email: string, password: string, name: string) => {
+  try {
+    await signUp({
       username: email,
       password,
       options: {
@@ -127,13 +111,11 @@ useEffect(() => {
         },
       },
     });
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error('Signup error:', error);
+    throw error;
+  }
+};
 
   const value: AuthContextType = {
     user,
