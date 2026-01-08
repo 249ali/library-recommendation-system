@@ -1,6 +1,4 @@
  import { Book, ReadingList, Recommendation } from '@/types';
- 
-
 import { fetchAuthSession } from 'aws-amplify/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -112,36 +110,34 @@ export async function createReadingList(
   return response.json();
 }
 
-/**
- * Update a reading list
- * TODO: Replace with PUT /reading-lists/:id API call
- */
 export async function updateReadingList(
   id: string,
   list: Partial<ReadingList>
 ): Promise<ReadingList> {
-  // Mock implementation
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const existingList = mockReadingLists.find((l) => l.id === id);
-      const updatedList: ReadingList = {
-        ...existingList!,
-        ...list,
-        id,
-        updatedAt: new Date().toISOString(),
-      };
-      resolve(updatedList);
-    }, 500);
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${API_BASE_URL}/reading-lists/${id}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(list),
   });
+
+  if (!response.ok) {
+    throw new Error('Failed to update reading list');
+  }
+
+  return response.json();
 }
 
-/**
- * Delete a reading list
- * TODO: Replace with DELETE /reading-lists/:id API call
- */
-export async function deleteReadingList(): Promise<void> {
-  // Mock implementation
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(), 300);
+export async function deleteReadingList(id: string): Promise<void> {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${API_BASE_URL}/reading-lists/${id}`, {
+    method: 'DELETE',
+    headers,
   });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete reading list');
+  }
 }
