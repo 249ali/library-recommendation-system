@@ -8,8 +8,8 @@ import { Amplify } from 'aws-amplify';
 Amplify.configure({
   Auth: {
     Cognito: {
-      userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
-      userPoolClientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+      userPoolId: 'us-east-1_4wwubGZyP',
+      userPoolClientId: '5sqnd3d70hd7cda1t66lj97q1m',
     },
   },
 });
