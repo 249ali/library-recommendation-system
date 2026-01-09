@@ -49,47 +49,88 @@ export async function getBook(id: string): Promise<Book | null> {
 
 
 export async function createBook(book: Omit<Book, 'id'>): Promise<Book> {
-  const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/books`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(book) 
-  });
-  if (!response.ok) {
-    throw new Error('Failed to create book');
+  try {
+    console.log('Creating book:', book);
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/books`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(book),
+    });
+    
+    console.log('Create book response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to create book: ${response.status} - ${errorText}`);
+    }
+    
+    const newBook = await response.json();
+    console.log('Created book:', newBook);
+    
+    return newBook;
+  } catch (error) {
+    console.error('Error creating book:', error);
+    throw error;
   }
-  return response.json();
 }
 
 export async function updateBook(
   id: string,
   book: Partial<Book>
 ): Promise<Book> {
-  const headers = await getAuthHeaders();
-
-  const response = await fetch(`${API_BASE_URL}/books/${id}`, {
-    method: 'PUT',
-    headers,
-    body: JSON.stringify(book),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to update book');
+  try {
+    console.log('Updating book:', { id, book });
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/books/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(book),
+    });
+    
+    console.log('Update book response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to update book: ${response.status} - ${errorText}`);
+    }
+    
+    const updatedBook = await response.json();
+    console.log('Updated book:', updatedBook);
+    
+    return updatedBook;
+  } catch (error) {
+    console.error('Error updating book:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function deleteBook(id: string): Promise<void> {
-  const headers = await getAuthHeaders();
-
-  const response = await fetch(`${API_BASE_URL}/books/${id}`, {
-    method: 'DELETE',
-    headers,
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to delete book');
+  try {
+    console.log('Deleting book:', id);
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/books/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    
+    console.log('Delete book response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to delete book: ${response.status} - ${errorText}`);
+    }
+    
+    console.log('Book deleted successfully');
+  } catch (error) {
+    console.error('Error deleting book:', error);
+    throw error;
   }
 }
 
@@ -336,6 +377,192 @@ export async function removeBookFromReadingList(listId: string, bookId: string):
     return response.json();
   } catch (error) {
     console.error('Error removing book from reading list:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get reviews for a book (public - no authentication required)
+ */
+export async function getReviews(bookId: string): Promise<Review[]> {
+  try {
+    console.log('Fetching reviews for book:', bookId);
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/reviews?bookId=${bookId}`, {
+      method: 'GET',
+      headers,
+    });
+    
+    console.log('Reviews response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to fetch reviews: ${response.status} - ${errorText}`);
+    }
+    
+    const reviews = await response.json();
+    console.log('Fetched reviews:', reviews);
+    
+    return reviews;
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new review (requires authentication)
+ */
+export async function createReview(bookId: string, rating: number, comment: string): Promise<Review> {
+  try {
+    console.log('Creating review for book:', { bookId, rating, comment });
+    
+    // Get current user info
+    const { getCurrentUser } = await import('aws-amplify/auth');
+    const user = await getCurrentUser();
+    const userId = user.userId;
+    const userName = user.signInDetails?.loginId || user.username || 'Anonymous User';
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/reviews`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        bookId,
+        userId,
+        userName,
+        rating,
+        comment: comment.trim(),
+      }),
+    });
+    
+    console.log('Create review response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to create review: ${response.status} - ${errorText}`);
+    }
+    
+    const newReview = await response.json();
+    console.log('Created review:', newReview);
+    
+    return newReview;
+  } catch (error) {
+    console.error('Error creating review:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update a review (user can only update their own reviews)
+ */
+export async function updateReview(reviewId: string, rating: number, comment: string): Promise<Review> {
+  try {
+    console.log('Updating review:', { reviewId, rating, comment });
+    
+    // Get current user info
+    const { getCurrentUser } = await import('aws-amplify/auth');
+    const user = await getCurrentUser();
+    const userId = user.userId;
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        userId,
+        rating,
+        comment: comment.trim(),
+      }),
+    });
+    
+    console.log('Update review response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to update review: ${response.status} - ${errorText}`);
+    }
+    
+    const updatedReview = await response.json();
+    console.log('Updated review:', updatedReview);
+    
+    return updatedReview;
+  } catch (error) {
+    console.error('Error updating review:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a review (user can only delete their own reviews)
+ */
+export async function deleteReview(reviewId: string): Promise<void> {
+  try {
+    console.log('Deleting review:', reviewId);
+    
+    // Get current user info
+    const { getCurrentUser } = await import('aws-amplify/auth');
+    const user = await getCurrentUser();
+    const userId = user.userId;
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}?userId=${userId}`, {
+      method: 'DELETE',
+      headers,
+    });
+    
+    console.log('Delete review response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to delete review: ${response.status} - ${errorText}`);
+    }
+    
+    console.log('Review deleted successfully');
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get admin metrics (admin only)
+ */
+export async function getAdminMetrics(): Promise<{
+  totalBooks: number;
+  totalUsers: number;
+  totalReadingLists: number;
+  totalReviews: number;
+  lastUpdated: string;
+}> {
+  try {
+    console.log('Fetching admin metrics...');
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/admin/metrics`, {
+      method: 'GET',
+      headers,
+    });
+    
+    console.log('Admin metrics response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to fetch admin metrics: ${response.status} - ${errorText}`);
+    }
+    
+    const metrics = await response.json();
+    console.log('Fetched admin metrics:', metrics);
+    
+    return metrics;
+  } catch (error) {
+    console.error('Error fetching admin metrics:', error);
     throw error;
   }
 }

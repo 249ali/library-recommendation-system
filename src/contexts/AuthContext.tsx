@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect } from 'react';
 import { User } from '@/types';
-import { signIn, signUp, signOut, getCurrentUser, confirmSignUp, resendSignUpCode } from 'aws-amplify/auth';
+import { signIn, signUp, signOut, getCurrentUser, confirmSignUp, resendSignUpCode, fetchAuthSession } from 'aws-amplify/auth';
 
 /**
  * Authentication context type definition
@@ -30,24 +30,29 @@ interface AuthProviderProps {
 }
 
 /**
- * ============================================================================
- * AUTHENTICATION CONTEXT - AWS COGNITO INTEGRATION
- * ============================================================================
- *
- * ⚠️ IMPORTANT: This file currently uses MOCK authentication with localStorage.
- *
- * TO IMPLEMENT AWS COGNITO:
- * Follow Week 3 in IMPLEMENTATION_GUIDE.md
- *
- * ============================================================================
- * IMPLEMENTATION CHECKLIST:
- * ============================================================================
- *
- * [ ] Week 3, Day 3-4: Replace logout() function with Cognito signOut
- * [ ] Week 3, Day 3-4: Update useEffect to check Cognito session
- * [ ] Week 3, Day 3-4: Remove localStorage mock code
- * [ ] Week 3, Day 3-4: Test registration and login flow
+ * Get user role from Cognito groups
  */
+const getUserRole = async (): Promise<'admin' | 'moderator' | 'user'> => {
+  try {
+    const session = await fetchAuthSession();
+    const groups = session.tokens?.accessToken?.payload['cognito:groups'] as string[] || [];
+    
+    console.log('User groups:', groups); // Debug log
+    
+    // Check groups in order of precedence (highest to lowest)
+    if (groups.includes('admin')) {
+      return 'admin';
+    }
+    if (groups.includes('moderator')) {
+      return 'moderator';
+    }
+    
+    return 'user'; // Default role
+  } catch (error) {
+    console.error('Error getting user role:', error);
+    return 'user'; // Fallback to user role
+  }
+};
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,11 +61,16 @@ useEffect(() => {
   const checkAuth = async () => {
     try {
       const user = await getCurrentUser();
+      const email = user.signInDetails?.loginId || '';
+      
+      // Get user role from Cognito groups
+      const role = await getUserRole();
+      
       setUser({
         id: user.userId,
-        email: user.signInDetails?.loginId || '',
+        email: email,
         name: user.username,
-        role: 'user',
+        role: role,
         createdAt: new Date().toISOString(),
       });
     } catch {
@@ -78,11 +88,15 @@ const login = async (email: string, password: string) => {
     const { isSignedIn } = await signIn({ username: email, password });
     if (isSignedIn) {
       const user = await getCurrentUser();
+      
+      // Get user role from Cognito groups
+      const role = await getUserRole();
+      
       setUser({
         id: user.userId,
         email: email,
         name: user.username,
-        role: 'user',
+        role: role,
         createdAt: new Date().toISOString(),
       });
     }
