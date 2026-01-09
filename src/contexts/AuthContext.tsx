@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect } from 'react';
 import { User } from '@/types';
-import { signIn, signUp, signOut, getCurrentUser } from 'aws-amplify/auth';
+import { signIn, signUp, signOut, getCurrentUser, confirmSignUp, resendSignUpCode } from 'aws-amplify/auth';
 
 /**
  * Authentication context type definition
@@ -12,7 +12,9 @@ export interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, name: string) => Promise<{ needsVerification: boolean }>;
+  confirmEmail: (email: string, code: string) => Promise<void>;
+  resendVerificationCode: (email: string) => Promise<void>;
 }
 
 /**
@@ -101,7 +103,7 @@ const logout = async () => {
 
 const signup = async (email: string, password: string, name: string) => {
   try {
-    await signUp({
+    const result = await signUp({
       username: email,
       password,
       options: {
@@ -111,8 +113,36 @@ const signup = async (email: string, password: string, name: string) => {
         },
       },
     });
+    
+    // Return whether verification is needed
+    return {
+      needsVerification: !result.isSignUpComplete
+    };
   } catch (error) {
     console.error('Signup error:', error);
+    throw error;
+  }
+};
+
+const confirmEmail = async (email: string, code: string) => {
+  try {
+    await confirmSignUp({
+      username: email,
+      confirmationCode: code,
+    });
+  } catch (error) {
+    console.error('Email confirmation error:', error);
+    throw error;
+  }
+};
+
+const resendVerificationCode = async (email: string) => {
+  try {
+    await resendSignUpCode({
+      username: email,
+    });
+  } catch (error) {
+    console.error('Resend verification code error:', error);
     throw error;
   }
 };
@@ -124,6 +154,8 @@ const signup = async (email: string, password: string, name: string) => {
     login,
     logout,
     signup,
+    confirmEmail,
+    resendVerificationCode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

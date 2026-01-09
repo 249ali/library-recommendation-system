@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { ReadingListSelector } from '@/components/books/ReadingListSelector';
 import { getBook } from '@/services/api';
 import { Book } from '@/types';
 import { formatRating } from '@/utils/formatters';
 import { handleApiError } from '@/utils/errorHandling';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * BookDetail page component
@@ -13,8 +15,10 @@ import { handleApiError } from '@/utils/errorHandling';
 export function BookDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [book, setBook] = useState<Book | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReadingListSelectorOpen, setIsReadingListSelectorOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -39,9 +43,13 @@ export function BookDetail() {
     }
   };
 
-  // TODO: Implement add to reading list functionality
   const handleAddToList = () => {
-    alert('Add to reading list functionality coming soon!');
+    if (!isAuthenticated) {
+      alert('Please log in to add books to your reading lists');
+      navigate('/login');
+      return;
+    }
+    setIsReadingListSelectorOpen(true);
   };
 
   if (isLoading) {
@@ -186,6 +194,16 @@ export function BookDetail() {
             </div>
           </div>
         </div>
+
+        {/* Reading List Selector Modal */}
+        {book && (
+          <ReadingListSelector
+            bookId={book.id}
+            bookTitle={book.title}
+            isOpen={isReadingListSelectorOpen}
+            onClose={() => setIsReadingListSelectorOpen(false)}
+          />
+        )}
 
         {/* TODO: Implement reviews section */}
         <div className="mt-8 glass-effect rounded-3xl shadow-xl border border-white/20 p-8 md:p-12">

@@ -106,15 +106,70 @@ export async function getRecommendations(query: string): Promise<Recommendation[
 }
 
 
+/**
+ * Get user's reading lists
+ *
+ * TODO: Replace with real API call in Week 2, Day 5-7
+ *
+ * Implementation steps:
+ * 1. Deploy Lambda function: library-get-reading-lists
+ * 2. Lambda should query DynamoDB by userId (from Cognito token)
+ * 3. Create API Gateway endpoint: GET /reading-lists
+ * 4. Add Cognito authorizer (Week 3)
+ * 5. Replace mock code below with:
+ *
+ * const headers = await getAuthHeaders();
+ * const response = await fetch(`${API_BASE_URL}/reading-lists`, {
+ *   headers
+ * });
+ * if (!response.ok) throw new Error('Failed to fetch reading lists');
+ * return response.json();
+ *
+ * Expected response: Array of ReadingList objects for the authenticated user
+ */
 export async function getReadingLists(): Promise<ReadingList[]> {
-  const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/reading-lists`, {
-    headers
-  });
-  if (!response.ok) {
-    throw new Error('Failed to fetch reading lists');
+  try {
+    console.log('Fetching reading lists...');
+    
+    const headers = await getAuthHeaders();
+    console.log('Headers for getReadingLists:', headers);
+    
+    // Try to get the current user to use their real ID
+    let userId = 'test-user-123'; // fallback
+    
+    try {
+      const { getCurrentUser } = await import('aws-amplify/auth');
+      const user = await getCurrentUser();
+      userId = user.userId;
+      console.log('Using real user ID:', userId);
+    } catch (authError) {
+      console.log('Could not get current user, using fallback:', userId);
+    }
+    
+    const url = `${API_BASE_URL}/reading-lists?userId=${userId}`;
+    console.log('Fetching from URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers
+    });
+    
+    console.log('Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to fetch reading lists: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('Fetched reading lists:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching reading lists:', error);
+    throw error;
   }
-  return response.json();
 }
 
 export async function createReadingList(
@@ -151,16 +206,97 @@ export async function updateReadingList(
 
 
 export async function deleteReadingList(id: string): Promise<void> {
-  const headers = await getAuthHeaders();
+  try {
+    console.log('Deleting reading list:', id);
+    
+    // Get current user
+    const { getCurrentUser } = await import('aws-amplify/auth');
+    const user = await getCurrentUser();
+    const userId = user.userId;
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/reading-lists/${id}?userId=${userId}`, {
+      method: 'DELETE',
+      headers,
+    });
 
-  const response = await fetch(`${API_BASE_URL}/reading-lists/${id}`, {
-    method: 'DELETE',
-    headers,
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to delete reading list');
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to delete reading list: ${response.status} - ${errorText}`);
+    }
+    
+    console.log('Reading list deleted successfully');
+  } catch (error) {
+    console.error('Error deleting reading list:', error);
+    throw error;
   }
 }
 
 /////////////////////////////////////////
+/**
+ * Add a book to a reading list
+ */
+export async function addBookToReadingList(listId: string, bookId: string): Promise<ReadingList> {
+  try {
+    console.log('Adding book to reading list:', { listId, bookId });
+    
+    // Get current user
+    const { getCurrentUser } = await import('aws-amplify/auth');
+    const user = await getCurrentUser();
+    const userId = user.userId;
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/reading-lists/${listId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        userId: userId,
+        bookIds: { action: 'add', bookId: bookId }
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to add book to reading list: ${response.status} - ${errorText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error adding book to reading list:', error);
+    throw error;
+  }
+}
+
+/**
+ * Remove a book from a reading list
+ */
+export async function removeBookFromReadingList(listId: string, bookId: string): Promise<ReadingList> {
+  try {
+    console.log('Removing book from reading list:', { listId, bookId });
+    
+    // Get current user
+    const { getCurrentUser } = await import('aws-amplify/auth');
+    const user = await getCurrentUser();
+    const userId = user.userId;
+    
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/reading-lists/${listId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        userId: userId,
+        bookIds: { action: 'remove', bookId: bookId }
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to remove book from reading list: ${response.status} - ${errorText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error removing book from reading list:', error);
+    throw error;
+  }
+}
