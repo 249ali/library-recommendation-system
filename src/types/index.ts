@@ -46,6 +46,9 @@ export interface Recommendation {
   bookId: string;
   reason: string;
   confidence: number;
+  // Optional fields for AI-generated recommendations
+  title?: string;
+  author?: string;
 }
 
 export interface AuthState {

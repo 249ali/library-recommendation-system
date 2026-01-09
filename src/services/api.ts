@@ -94,15 +94,54 @@ export async function deleteBook(id: string): Promise<void> {
 }
 
 export async function getRecommendations(query: string): Promise<Recommendation[]> {
-  const headers = await getAuthHeaders();
-  const response = await fetch(`${API_BASE_URL}/recommendations`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ query }),
-  });
-  if (!response.ok) throw new Error('Failed to get recommendations');
-  const data = await response.json();
-  return data.recommendations;
+  try {
+    console.log('Getting AI recommendations for query:', query);
+    
+    const headers = await getAuthHeaders();
+    console.log('Request headers:', headers);
+    
+    const requestBody = { query };
+    console.log('Request body:', requestBody);
+    
+    const response = await fetch(`${API_BASE_URL}/recommendations`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+    });
+    
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to get recommendations: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('Raw API response:', data);
+    
+    // The Lambda returns { recommendations: [...] }
+    const recommendations = data.recommendations || [];
+    
+    // Convert the Bedrock response to match our frontend Recommendation type
+    const formattedRecommendations: Recommendation[] = recommendations.map((rec: any, index: number) => ({
+      id: `bedrock-${index}`,
+      bookId: `unknown-${index}`, // We'll need to match titles to our book IDs
+      reason: rec.reason || `${rec.title} by ${rec.author} - ${rec.reason}`,
+      confidence: rec.confidence || 0.8,
+      // Store the AI response data for display
+      title: rec.title,
+      author: rec.author,
+    }));
+    
+    console.log('Formatted recommendations:', formattedRecommendations);
+    return formattedRecommendations;
+    
+  } catch (error) {
+    console.error('Error getting recommendations:', error);
+    throw error;
+  }
 }
 
 
