@@ -69,7 +69,7 @@ useEffect(() => {
       setUser({
         id: user.userId,
         email: email,
-        name: user.username,
+        name: email, // Use email as display name
         role: role,
         createdAt: new Date().toISOString(),
       });
@@ -95,7 +95,7 @@ const login = async (email: string, password: string) => {
       setUser({
         id: user.userId,
         email: email,
-        name: user.username,
+        name: email, // Use email as display name
         role: role,
         createdAt: new Date().toISOString(),
       });
